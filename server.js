@@ -6,7 +6,7 @@ const app = express();
 // connect database
 connectDB();
 
-app.get('/', (req, res) => res.send('API Running smooothly.'));
+app.get('/', (req, res) => res.send('API Running oh so smooothly.'));
 
 const PORT = process.env.PORT || 5000;
 
