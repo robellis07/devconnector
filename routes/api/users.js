@@ -7,7 +7,7 @@ const jsonwebtoken = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 
 // config settings
-const config = require('../../config');
+const config = require('config');
 
 // pull model
 const User = require('../../models/User');
@@ -38,8 +38,9 @@ router.post('/', [
 async (req, res) => {
   const errors = validationResult(req);  
   if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
-    return;
+    return res
+      .status(400)
+      .json({ errors: errors.array() });
   }
 
   // pull name, email and password from body
@@ -50,8 +51,9 @@ async (req, res) => {
     let user = await User.findOne({ email });
 
     if (user) {
-      res.status(400).json({ errors: [{msg: 'User already exists'}] });
-      return;
+      return res
+        .status(400)
+        .json({ errors: [{msg: 'User already exists'}] });
     }
 
     // get users gravitar based on email
@@ -81,10 +83,11 @@ async (req, res) => {
     const payload = {
       user: {
         id: user.id,
+        name: user.name,
       }
     }
   
-    // return json token (needed for login)
+    //return json token (needed for login)
     user.id = await jsonwebtoken.sign(
       payload, 
       config.get('jasontokensecret'),
@@ -95,7 +98,9 @@ async (req, res) => {
       });
     } catch(err) {
     console.error(err.message);
-    res.status(500).send("Server Error");
+    return res
+      .status(500)
+      .send("Server Error");
   }
 
 
