@@ -26,6 +26,10 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// @route   POST api/auth
+// @desc    Authenticate user and get token
+// @access  public
+
 router.post('/login', [
   check(
     'email', 
@@ -58,12 +62,23 @@ async (req, res) => {
     });
   }
   
+  /*
+    instead of the code below, could have used bcrypt.compare(password, user.password)
+    it would then do the same code below and return true/false
+  */
   // get the salt of the saved user
   const salt = await bcrypt.getSalt(user.password);
 
   // hash the password
   const hashedPwd = await bcrypt.hash(password, salt);
 
+  // stuff below needs to return token
+  // the way to get the token is the same as the auth create
+  // it needs to set the expiration and send the payload, this will restart the timeout
+  // and will return the token
+
+  // also the fail check should be before the match
+  // and it should all be wrapped in a try catch  (stuff above)
   if (hashedPwd == user.password) {
     return res
       .status(200)
