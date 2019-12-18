@@ -9,8 +9,6 @@ const { check, validationResult } = require('express-validator');;
 // @desc    test route
 // @access  public
 router.get('/', auth, async (req, res) => {
-
-  console.log(`Attempting to find ${ req.user.id }`);
   try {
     const theUser = await User.findById(req.user.id).select('-password');
     if (!theUser) {
@@ -47,18 +45,16 @@ async (req, res) => {
       .json({ errors: errors.array() });
   }
 
-
   const {email, password} = req.body;
   
-  console.log(`got email ${email} and password ${password}`);
   // get the hashed password from the mongodb
   const user = await User.findOne({ email });
 
   if (!user) {
     return res 
-    .status(401)
-    .json( {
-      msg: 'Email or password is invalid, please try again'
+      .status(401)
+      .json( {
+        msg: 'Email or password is invalid, please try again'
     });
   }
   
