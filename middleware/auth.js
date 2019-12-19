@@ -15,7 +15,6 @@ module.exports = function(req, res, next) {
   // verify the token
   try {
     const decoded = jsonwebtoken.verify(token, config.get('jasontokensecret'));
-    console.log('decoded value', decoded);
     req.user = decoded.user;
     next();
   }
