@@ -3,7 +3,7 @@ const router = express.Router();
 const auth = require('../../middleware/auth');
 const User = require('../../models/User');
 const bcrypt = require('bcryptjs')
-const { check, validationResult } = require('express-validator');;
+const { check, validationResult } = require('express-validator');
 const config = require('config');
 const jsonwebtoken = require('jsonwebtoken');
 
@@ -42,8 +42,7 @@ router.post('/login', [
     'Please supply a password')
     .not()
     .isEmpty(),   
-],
-async (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);  
 
   if (!errors.isEmpty()) {
@@ -87,6 +86,24 @@ async (req, res) => {
       .status(500)
       .json({ msg: 'An error occured, please try again'});
   }  
+});
+
+router.get('/', auth, async (req, res) => {
+  try {
+    const theUser = await User.findById(req.user.id).select('-password');
+    if (!theUser) {
+      return res
+        .status(500)
+        .send({msg : 'Unable to find user'});
+    }
+
+    return res
+      .status(200)
+      .send(theUser);
+
+    } catch(err) {
+    throw err;
+  }
 });
 
 module.exports = router;
