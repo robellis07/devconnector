@@ -48,12 +48,12 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// @route   GET api/posts/:user_id
+// @route   GET api/posts/:id
 // @desc    get all posts for a user
 // @access  private
-router.get('/:user_id', auth, async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
-    const posts = await Post.find({ user: req.params.user_id }).sort({
+    const posts = await Post.find({ user: req.params.id }).sort({
       date: -1
     });
     return res.json(posts);
