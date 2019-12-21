@@ -1,4 +1,6 @@
 {
-  "mongoURI" : "mongodb+srv://jimbob:jimbob@devconnector-wzh8b.mongodb.net/test?retryWrites=true&w=majority",
-  "jasontokensecret" : "thisismysecret"
+  "mongoURI": "mongodb+srv://jimbob:jimbob@devconnector-wzh8b.mongodb.net/test?retryWrites=true&w=majority",
+  "jasontokensecret": "thisismysecret",
+  "githubClientId": "9d2253f14dba236be255",
+  "githubSecret": "458fbbbe1a5361292e3a91197c5e50d71979dee1"
 }
