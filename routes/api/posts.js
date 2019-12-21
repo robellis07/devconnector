@@ -53,13 +53,194 @@ router.get('/', auth, async (req, res) => {
 // @access  private
 router.get('/:id', auth, async (req, res) => {
   try {
+    console.log(`param:${req.params.id}`);
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+    return res.json(post);
+  } catch (err) {
+    if (err.kind == 'ObjectId') {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+    console.error(err.message);
+    return res.status(500).send('Server Error');
+  }
+});
+
+// @route   DELETE api/posts/:id
+// @desc    Delete a post
+// @access  private
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post || post.user.toString() != req.user.id.toString()) {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+    await post.remove();
+    return res.json({ msg: 'Your post has been deleted' });
+  } catch (err) {
+    if (err.kind == 'ObjectId') {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+    console.error(err.message);
+    return res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/posts/:id
+// @desc    get all posts for a user
+// @access  private
+router.get('/user/:id', auth, async (req, res) => {
+  try {
     const posts = await Post.find({ user: req.params.id }).sort({
       date: -1
     });
     return res.json(posts);
   } catch (err) {
     if (err.kind == 'ObjectId') {
-      return res.status(400).json({ msg: 'Invalid userid' });
+      return res.status(400).json({ msg: 'Invalid User ID' });
+    }
+    console.error(err.message);
+    return res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT api/posts/like/:id
+// @desc    Like a post
+// @access  private
+router.put('/like/:id', auth, async (req, res) => {
+  try {
+    // find the post
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+
+    if (
+      post.likes.filter(f => f.user.toString() === req.user.id.toString())
+        .length > 0
+    ) {
+      return res.status(400).json({ msg: 'You have already liked this post' });
+    }
+
+    post.likes.unshift({ user: req.user.id });
+    await post.save();
+    res.json(post.likes);
+  } catch (err) {
+    if (err.kind == 'ObjectId') {
+      return res.status(400).json({ msg: 'Invalid Post id' });
+    }
+    console.error(err.message);
+    return res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT api/posts/unlike/:id
+// @desc    Unlike a post
+// @access  private
+router.put('/unlike/:id', auth, async (req, res) => {
+  try {
+    // find the post
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+
+    if (
+      post.likes.filter(f => f.user.toString() == req.user.id.toString())
+        .length > 0
+    ) {
+      post.likes = post.likes.filter(
+        f => f.user.toString() !== req.user.id.toString()
+      );
+      await post.save();
+      return res.json({ msg: 'Like removed from this post.' });
+    }
+
+    res.status(400).json({
+      msg: 'You cannot unlike a post that you do not currently like.'
+    });
+  } catch (err) {
+    if (err.kind == 'ObjectId') {
+      return res.status(400).json({ msg: 'Invalid Post id' });
+    }
+    console.error(err.message);
+    return res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT api/posts/comment/:id/:otherid
+// @desc    put a comment on a post
+// @access  private
+router.put(
+  '/comment/:id/',
+  [auth, [check('text', 'Text is required').notEmpty()]],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(req.body);
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      // find the post
+      const post = await Post.findById(req.params.id);
+      if (!post) {
+        return res.status(400).json({ msg: 'Post not found' });
+      }
+
+      // find the user
+      const user = await User.findById(req.user.id);
+      const comment = {
+        user: user.id,
+        text: req.body.text,
+        name: user.name,
+        avatar: user.avatar
+      };
+
+      post.comments.unshift(comment);
+      await post.save();
+      res.json(post.comments);
+    } catch (err) {
+      if (err.kind == 'ObjectId') {
+        return res.status(400).json({ msg: 'Invalid Post id' });
+      }
+      console.error(err.message);
+      return res.status(500).send('Server Error');
+    }
+  }
+);
+
+// @route   DELETE api/posts/comment/:id
+// @desc    Delete a comment
+// @access  private
+router.delete('/comment/:post_id/:comment_id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.post_id);
+    if (!post) {
+      return res.status(400).json({ msg: 'Post not found' });
+    }
+
+    // get comments by this user on this post
+    // then find the one based on the param
+    const removeIndex = post.comments
+      .filter(comments => comments.user.toString() == req.user.id.toString())
+      .map(item => item.id)
+      .indexOf(req.params.comment_id);
+
+    // if it exists, remove it
+    if (removeIndex > -1) {
+      post.comments.splice(removeIndex, 1);
+      await post.save();
+      return res.json({ msg: 'Your comment has been deleted' });
+    }
+
+    res.status(400).json({ msg: 'Unable to find comment' });
+  } catch (err) {
+    if (err.kind == 'ObjectId') {
+      return res.status(400).json({ msg: 'Post not found' });
     }
     console.error(err.message);
     return res.status(500).send('Server Error');
