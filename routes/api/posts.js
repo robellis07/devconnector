@@ -192,7 +192,7 @@ router.put(
       }
 
       // find the user
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user.id).select('-password');
       const comment = {
         user: user.id,
         text: req.body.text,
@@ -213,7 +213,7 @@ router.put(
   }
 );
 
-// @route   DELETE api/posts/comment/:id
+// @route   DELETE api/posts/comment/:post_id/:comment_id
 // @desc    Delete a comment
 // @access  private
 router.delete('/comment/:post_id/:comment_id', auth, async (req, res) => {
@@ -223,21 +223,26 @@ router.delete('/comment/:post_id/:comment_id', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Post not found' });
     }
 
-    // get comments by this user on this post
-    // then find the one based on the param
-    const removeIndex = post.comments
-      .filter(comments => comments.user.toString() == req.user.id.toString())
-      .map(item => item.id)
-      .indexOf(req.params.comment_id);
+    const comment = post.comments.find(
+      comment => comment.id == req.params.comment_id
+    );
 
-    // if it exists, remove it
-    if (removeIndex > -1) {
-      post.comments.splice(removeIndex, 1);
-      await post.save();
-      return res.json({ msg: 'Your comment has been deleted' });
+    if (!comment) {
+      return res.status(404).json({ msg: 'Comment not found' });
     }
 
-    res.status(400).json({ msg: 'Unable to find comment' });
+    // check user
+    if (comment.user != req.user.id) {
+      return res.status(401).json({ msg: 'Not authorized' });
+    }
+
+    // remove it
+    const removeIndex = post.comments.map(item => item.id).indexOf(comment.id);
+    post.comments.splice(removeIndex, 1);
+
+    // save
+    await post.save();
+    return res.json({ msg: 'Your comment has been deleted' });
   } catch (err) {
     if (err.kind == 'ObjectId') {
       return res.status(400).json({ msg: 'Post not found' });
