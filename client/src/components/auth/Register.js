@@ -1,13 +1,16 @@
-import React, { Fragment, useState } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import React, { Fragment, useState } from 'react';
+import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { setAlert } from '../../actions/alert';
+import PropTypes from 'prop-types';
 
-const Register = () => {
+const Register = ({ setAlert }) => {
+  // the ({ setAlert }) is destructoring the param and getting setAlert from it
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    password2: ""
+    name: '',
+    email: '',
+    password: '',
+    password2: ''
   });
 
   const { name, email, password, password2 } = formData;
@@ -18,29 +21,12 @@ const Register = () => {
   const onSubmit = async e => {
     e.preventDefault();
     if (password !== password2) {
-      console.log("Passwors do not match");
+      setAlert('Passwords do not match', 'danger');
     } else {
-      try {
-        // make the header
-        const config = {
-          headers: {
-            "Content-Type": "application/json",
-            accept: "application/json"
-          }
-        };
-        const newUser = {
-          name,
-          email,
-          password
-        };
-        const body = JSON.stringify(newUser);
-        const res = await axios.post("/api/users", body, config);
-        console.log(res);
-      } catch (err) {
-        console.log("error was,", err);
-      }
+      console.log('success');
     }
   };
+
   return (
     <Fragment>
       <h1 className="large text-primary">Sign Up</h1>
@@ -103,4 +89,8 @@ const Register = () => {
   );
 };
 
-export default Register;
+Register.propTypes = {
+  setAlert: PropTypes.func.isRequired
+};
+
+export default connect(null, { setAlert })(Register);
